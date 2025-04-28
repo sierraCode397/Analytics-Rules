@@ -310,8 +310,6 @@ git push --set-upstream origin main
 sudo docker exec -it jenkins bash -c 'cat "${JENKINS_HOME:-/var/jenkins_home}"/secrets/initialAdminPassword'
 ```
 
-Could you convert this text to a .md format? Distinguishes between titles, subtitles, notes, highlight the key aspects or values, tips, and code with .md attributes, but you shouldn't change any of the original information.
-
 # Stage 3: Jenkins Configuration
 
 ## Initial Setup
@@ -328,13 +326,12 @@ In Jenkins main dashboard:
    - Azure KeyVault
 
 ## Credentials Setup
-In **Manage Jenkins** > **Credentials**:
+You need to create some credentials, In **Manage Jenkins** > **Credentials**:
 1. **Username and Password**:
 
 - **Username**: root
 - **Password**: "The gitlab api token you create in previous steps"
 - **ID**: "what you want"
-
 
 2. **Azure Credentials**
 
