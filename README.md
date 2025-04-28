@@ -257,7 +257,7 @@ sudo docker exec -it jenkins bash -c 'cat "${JENKINS_HOME:-/var/jenkins_home}"/s
 
 - Save this Jenkins password for future steps
 
-- The test connection may fail initially (expected behavior)
+- The test connection may fail initially (expected behavior) So far if you test the connection it will fail because you already don't have the jenkins job but it will work. Save the integration (Connection)
 
 - The integration will work after Jenkins job creation
 
@@ -393,7 +393,8 @@ In the **Manage Jenkins** menu, under the **System** menu:
 
 ## Final Verification
 Repeat this step to ensure proper setup:
-> "and pass this password in the previous step, save the password for future steps. So far if you test the connection it will fail because you already don't have the jenkins job but it will work. Save the integration (Connection)"
+
+[So far if you test the connection it will fail because you already don't have the jenkins job but it will work. Save the integration (Connection)](#important-notes)
 
 ## Completion
 The CI/CD pipeline is now fully configured. Changes pushed to your source repository will automatically update Microsoft Sentinel analytics rules.
