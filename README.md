@@ -231,7 +231,7 @@ sudo cat /srv/gitlab/config/initial_root_password
 
 ### Important Notes:
 
-- The test connection may fail initially (expected behavior)because you already don't have the jenkins job but it will work. Save the integration (Connection)
+- The test connection may fail initially (expected behavior) because you already don't have the jenkins job but it will work. Save the integration (Connection)
 
 - The integration will work after Jenkins job creation
 
@@ -279,23 +279,14 @@ git push --set-upstream origin main
 
 `http://<public_ip-Jenkins-instance>:8080`
 
-2. Enter the password obtained from previous steps (retrieve it by running in your Jenkins instance terminal):
-```bash
-sudo docker exec -it jenkins bash -c 'cat "${JENKINS_HOME:-/var/jenkins_home}"/secrets/initialAdminPassword'
-```
-
 # Stage 3: Jenkins Configuration
-
-## Initial Setup
-- Skip the user creation step
-- Allow installation of recommended plugins
 
 ## Credentials Setup
 You need to create some credentials, In **Manage Jenkins** > **Credentials**:
 1. **Username and Password**:
 
 - **Username**: root
-- **Password**: "The gitlab api token you create in previous steps"
+- **Password**: "The gitlab api token you created in previous steps"
 - **ID**: "what you want"
 
 2. **Azure Credentials**
@@ -328,13 +319,12 @@ In the **Manage Jenkins** menu, under the **System** menu:
 
 ## Pipeline Job Creation
 1. Go to the main dashboard and select **New Item** or **Create a job**
-2. Name this job with the same name you set in the GitLab connection (from previous steps)
+2. Name this job with the same name you set in the GitLab connection ([Stage 2 Gitlab](#jenkins-integration-setup))
 3. Select **Pipeline** option
 4. Configure job:
 - **GitLab Connection**: Select your connection
-- **Triggers**:
-  - Build when a change is pushed to GitLab
-  - Webhook URL: `http://54.161.1.6:8080/project/CICD-jenkins`
+- **Triggers** Select these:
+  - Build when a change is pushed to GitLab Webhook URL: `http://54.161.1.6:8080/project/CICD-jenkins`
   - Selected events:
     - Push Events
     - Push Events on branch delete
@@ -350,6 +340,8 @@ In the **Manage Jenkins** menu, under the **System** menu:
 - Repository browser: **gitlab**
 - Script Path: `Jenkinsfile`
 6. Save the job
+
+### Run the Job
 
 ## Final Verification
 Repeat this step to ensure proper setup:
