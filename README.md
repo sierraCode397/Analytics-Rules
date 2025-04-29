@@ -39,6 +39,7 @@ You need to have:
   - App registration
   - Assign and remove roles
   - Microsoft Sentinel
+  - Create secrets in keyvault
 
 ### Initial Resource Setup
 
@@ -46,7 +47,7 @@ Before any other step, you need to have these resources running:
 
 1. A resource group
 2. Inside it:
-   - A storage account
+   - A storage account, with a container on it, save the name of the container for future steps
    - A keyvault
 
 **Save these for future steps**:
@@ -57,10 +58,6 @@ Before any other step, you need to have these resources running:
 ### App Registration
 
 1. Create an app register in Microsoft Entra ID
-2. At the subscription level, assign these roles to the service principal:
-   - Log Analytics Contributor
-   - Microsoft Sentinel Contributor
-   - Key Vault Secrets Officer
 
 ### Service Principal Configuration
 
@@ -80,77 +77,60 @@ And set those values in your Key vault as secrets with this names
 
 > **Note**: Carefully check this step of permissions
 
+At the subscription level, assign only one role to the service principal, in the submenu select "Privileged administrator roles" and choose:
+   - Contributor
+
+> **Note**: You will remove this role at the end, when you already have all the resources for the first time
+
+# Least privilege
+
+### After your first deployment of all the project, Delete the `Contributor` role from the subscription level.  Then you need to grant specific roles at different scopes. Follow these steps:
+
+1. **Storage Account (Terraform backend state)**
+   - **Scope**: Your Storage Account resource  
+   - **Role**: `Storage Account Key Operator Service Role`  
+   - **Why**: gives exactly the `listKeys` (and regenerate) permission without granting full management-plane rights.
+
+2. **Key Vault (ARM credentials)**
+
+   - **Scope**: Your Key Vault resource
+   - **Role**: `Key Vault Secrets Officer`
+   - **Why**: Grants permission to read, list, and manage secrets—so your scripts or pipelines can fetch credentials like `ARM_CLIENT_ID`, `ARM_CLIENT_SECRET`, etc.
+
+3. **Resource Group for Sentinel**
+
+   - **Scope**: The Resource Group where Microsoft Sentinel will be deployed (e.g. `Sentinel`)
+   - **Roles (both required)**:`Log Analytics Contributor`, `Microsoft Sentinel Contributor`  
+   - **Why**: Manages the Log Analytics workspace itself—configuring data collection, retention, and workspace settings.
+   - **Why**: Onboards the workspace to Sentinel and allows creation, update, and deletion of Sentinel artifacts such as analytics rules, playbooks, workbooks, and incidents.
+
 ## Finish Prerequisites
 
 # Stage 1
 
 Once you have all of those Prerequisites, go back to this repository which is the source Repository with the analytics rules for Sentinel.
 
-## Azure CLI Installation
-
-You need to install the "Azure CLI" to have:
-- The resource group
-- The Log Analytics workspace
-- The Log Analytics workspace onboarding in your Azure account
-
 **Important security note**:  
-Don't skip this step and don't pass the values in your key vault directly in the code.
-
-Run these commands to install `az cli`:
-
-```bash
-curl -sL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > microsoft.gpg
-sudo install -o root -g root -m 644 microsoft.gpg /etc/apt/trusted.gpg.d/
-sudo sh -c 'echo "deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ $(lsb_release -cs) main" > /etc/apt/sources.list.d/azure-cli.list'
-rm microsoft.gpg
-
-sudo apt-get update
-sudo apt-get install azure-cli
-```
-
-## Azure Login
-
-Then loggin into your azure account 
-
-```bash
-az login --tenant Your-tenant_id --use-device-code
-```
-
-Then run this command to set permmision to this file and recover the secrets from your key vault 
-
-```bash
-sudo chmod +x set-key-values.sh
-./set-key-values.sh
-```
+Don't pass the values in your key vault directly in the code.
 
 ## Configuration Update
 
-Then you only need to update this part of the code in the `main.tf` file of this project with the name of your Storage Account and resource group:
+You only need to update this part of the code in the root `main.tf` file of this project with the name of your Storage Account, container name and resource group:
 
 ```hcl
 terraform {
   backend "azurerm" {
     resource_group_name  = ""  # <== Update this
     storage_account_name = ""  # <== Update this
-    container_name       = "tfstate"
+    container_name       = ""  # <== Update this
     key                  = "terraform.tfstate"
   }
 }
 ```
 
-## Terraform Execution
-
-After updating the configuration, you will be able to run Terraform to install the resources for the analytics rules in Azure. Execute these commands in order:
-
-```hcl
-terraform init
-terraform plan
-terraform apply
-```
-
 ## Next Steps
 
-Once everything is set up and running, proceed to the other repository: `Project_Terraform_CI-CD`
+Once everything is set up, proceed to the other repository: `Project_Terraform_CI-CD`
 
 This repository will:
 
@@ -213,7 +193,7 @@ Once connected to the GitLab instance terminal, get the GitLab initial password 
 sudo cat /srv/gitlab/config/initial_root_password
 ```
 
-**Note**: This password is only available for 24 hours after installation. Make sure to change it after first login.
+**Note**: This password is only available for 24 hours after installation.
 
 ## GitLab Initial Setup
 
@@ -243,22 +223,15 @@ sudo cat /srv/gitlab/config/initial_root_password
 2. Find and select "Jenkins"
 3. Configure connection:
    - Set a **connection name** (remember this for Jenkins job creation)
+   - Allow the three triggers: Push, Tag and merge
    - Jenkins server URL: `http://<public_ip-Jenkins-instance>:8080`
    - Credentials:
      - Username: `admin`
-     - Password: `<jenkins-instance-password>`
-
-### Obtaining Jenkins Password
-To get the Jenkins admin password, run in your Jenkins instance terminal:
-```bash
-sudo docker exec -it jenkins bash -c 'cat "${JENKINS_HOME:-/var/jenkins_home}"/secrets/initialAdminPassword'
-```
+     - Password: `This entry can't be empty so put a random text only, don't matter what`
 
 ### Important Notes:
 
-- Save this Jenkins password for future steps
-
-- The test connection may fail initially (expected behavior) So far if you test the connection it will fail because you already don't have the jenkins job but it will work. Save the integration (Connection)
+- The test connection may fail initially (expected behavior)because you already don't have the jenkins job but it will work. Save the integration (Connection)
 
 - The integration will work after Jenkins job creation
 
@@ -317,15 +290,6 @@ sudo docker exec -it jenkins bash -c 'cat "${JENKINS_HOME:-/var/jenkins_home}"/s
 - Skip the user creation step
 - Allow installation of recommended plugins
 
-## Plugin Installation
-In Jenkins main dashboard:
-1. Go to **Manage Jenkins** > **Plugins**
-2. Install these 4 plugins:
-   - GitLab
-   - Azure Credentials
-   - Azure CLI
-   - Azure KeyVault
-
 ## Credentials Setup
 You need to create some credentials, In **Manage Jenkins** > **Credentials**:
 1. **Username and Password**:
@@ -342,12 +306,10 @@ You need to create some credentials, In **Manage Jenkins** > **Credentials**:
 - Tenant_id:
 - **ID**: "what you want"
 
-
 3. **GitLab API Token**
 
 - **API Token**: "The gitlab api token you create in previous steps"
 - **ID**: "what you want"
-
 
 ## System Configuration
 In the **Manage Jenkins** menu, under the **System** menu:
@@ -392,7 +354,9 @@ In the **Manage Jenkins** menu, under the **System** menu:
 ## Final Verification
 Repeat this step to ensure proper setup:
 
-[So far if you test the connection it will fail because you already don't have the jenkins job but it will work. Save the integration (Connection)](#important-notes)
+- [So far if you test the connection it will fail because you already don't have the jenkins job but it will work. Save the integration (Connection)](#important-notes)
+
+- [Make sure you grant only the least privilege with the roles](#least-privilege)
 
 ## Completion
 The CI/CD pipeline is now fully configured. Changes pushed to your source repository will automatically update Microsoft Sentinel analytics rules.

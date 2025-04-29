@@ -1,7 +1,7 @@
 terraform {
   backend "azurerm" {
     resource_group_name  = "Free-tier"
-    storage_account_name = "isaacazuretest1"
+    storage_account_name = "isaacazuretest"
     container_name       = "tfstate"
     key                  = "terraform.tfstate"
   }
@@ -14,8 +14,7 @@ provider "azurerm" {
 resource "azurerm_resource_group" "example" {
   name     = "Sentinel"
   location = "Central US"
-  tags = { env = "testing" }
-  
+  tags     = { env = "testing" }
 }
 
 resource "azurerm_log_analytics_workspace" "example" {
@@ -26,13 +25,14 @@ resource "azurerm_log_analytics_workspace" "example" {
 }
 
 resource "azurerm_sentinel_log_analytics_workspace_onboarding" "example" {
+  # Use the workspace’s resource ID:
   workspace_id = azurerm_log_analytics_workspace.example.id
 }
 
 module "sentinel_rules" {
   source = "./modules/sentinel-rules"
 
-  # Iterate over both security and vm_activity rules and flatten them into a single list
+  # Flatten both rule lists into one map
   for_each = {
     for idx, rule in flatten([
       local.rules_vm_activity,
@@ -45,4 +45,9 @@ module "sentinel_rules" {
   severity     = each.value.severity
   query        = each.value.query
   workspace_id = azurerm_log_analytics_workspace.example.id
+
+  # THIS IS THE KEY: force Terraform to wait for onboarding
+  depends_on = [
+    azurerm_sentinel_log_analytics_workspace_onboarding.example
+  ]
 }
