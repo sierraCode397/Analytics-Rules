@@ -60,6 +60,7 @@ Before any other step, you need to have these resources running:
 2. At the subscription level, assign these roles to the service principal:
    - Log Analytics Contributor
    - Microsoft Sentinel Contributor
+   - Key Vault Secrets Officer
 
 ### Service Principal Configuration
 
