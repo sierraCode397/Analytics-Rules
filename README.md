@@ -1,5 +1,27 @@
 # DevOps CI/CD Infrastructure-as-Code project for cloud security automation.
 
+This solution is built on two dedicated Git repositories—**Project_Terraform_CI-CD** and **Analytics-Rules**—that together enable fully automated, end-to-end security enforcement across your cloud environments.  
+
+## 1. Purpose & Scope
+
+**Why this exists**  
+Security controls in the cloud can quickly become complex and hard to manage at scale. This project codifies your security posture as reusable Terraform modules and CI/CD pipelines, ensuring that every change is:
+
+- **Consistent**: Infrastructure and security configurations are defined in code and applied the same way every time.  
+- **Traceable**: All changes flow through version-controlled pipelines with clear audit trails.  
+- **Automated**: From spinning up resources to updating detection rules, everything happens with zero manual intervention once you hit “deploy.”  
+
+**What it delivers**  
+1. **Infrastructure provisioning** via Terraform, including secure networking, IAM policies, and logging.  
+2. **Security analytics rules** (e.g. in Sentinel or SIEM) maintained in the `Analytics-Rules` repo.  
+3. **CI/CD pipelines** that validate, plan, and apply changes across both AWS and Azure, complete with automated testing and approval gates.  
+
+By the end of this project, you’ll have a repeatable, auditable framework that keeps your cloud security posture enforced and up to date—without lifting a finger.  
+
+### This project `Analytics-Rules` created the follow:
+
+![AWS Academy Cloud Architecting](https://imgur.com/lf3vSB0.png)
+
 ## Prerequisites
 
 ### Create SSH Key
@@ -32,6 +54,7 @@ You need to have:
 - A personal Azure account (A tenant) 
 - A subscription that allows you to use these services:
   - Storage account
+  - Create a container inside the storage account
   - Key vault
   - Create and delete resources groups
   - Log Analytics workspace
@@ -82,6 +105,10 @@ At the subscription level, assign only one role to the service principal, in the
 
 > **Note**: You will remove this role at the end, when you already have all the resources for the first time
 
+### These are the resources in azure and the scope of this project
+
+![AWS Academy Cloud Architecting](https://imgur.com/C43APnH.png)
+
 # Least privilege
 
 ### After your first deployment of all the project, Delete the `Contributor` role from the subscription level.  Then you need to grant specific roles at different scopes. Follow these steps:
@@ -103,6 +130,10 @@ At the subscription level, assign only one role to the service principal, in the
    - **Roles (both required)**:`Log Analytics Contributor`, `Microsoft Sentinel Contributor`  
    - **Why**: Manages the Log Analytics workspace itself—configuring data collection, retention, and workspace settings.
    - **Why**: Onboards the workspace to Sentinel and allows creation, update, and deletion of Sentinel artifacts such as analytics rules, playbooks, workbooks, and incidents.
+
+### At the end of all this project you must to have something like this:
+
+![AWS Academy Cloud Architecting](https://imgur.com/Fn3REB3.png)
 
 ## Finish Prerequisites
 
