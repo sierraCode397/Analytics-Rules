@@ -88,8 +88,16 @@ After registration, save this data:
 
   - SUBSCRIPTION_ID:
   - Client_id:
-  - Client_secret:
+  - Client_secret: (For this, select the Service Principal and in "Manager" select "Certificates & secrets" get the "Client secret")
   - Tenant_id: 
+
+At the subscription level, assign two roles to the service principal:
+   - Key Vault Secrets Officer
+
+and the other in the submenu select "Privileged administrator roles" choose:
+   - Contributor
+
+> **Note**: You will remove this role at the end, when you already have all the resources for the first time
 
 And set those values in your Key vault as secrets with this names 
 
@@ -99,11 +107,6 @@ And set those values in your Key vault as secrets with this names
   - ARM-TENANT-ID: Tenant_id
 
 > **Note**: Carefully check this step of permissions
-
-At the subscription level, assign only one role to the service principal, in the submenu select "Privileged administrator roles" and choose:
-   - Contributor
-
-> **Note**: You will remove this role at the end, when you already have all the resources for the first time
 
 ### These are the resources in azure and the scope of this project
 
@@ -290,7 +293,13 @@ sudo cat /srv/gitlab/config/initial_root_password
    ```
 ### Push to Repository
 
+Remember add this key to your ssh:
+  ```bash
+  ssh-add ~/.ssh/user1.pem
+  ```
+
 Set the remote URL in your local repository:
+
 
 ```bash
 git remote set-url origin ssh://git@Your_IP_OF_gitlab_instance:2424/Your_User_gitlab/your_repository_name.git
