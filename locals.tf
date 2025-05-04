@@ -1,16 +1,5 @@
 locals {
   # Security rules
-  rules_security = [
-    {
-      name         = "unusual-activity"
-      display_name = "Unusual Security Activity"
-      severity     = "Medium"
-      query        = <<QUERY
-SecurityEvent
-| where EventID == 4625
-QUERY
-    },
-  ]
 
   # VM activity rules
   rules_vm_activity = [

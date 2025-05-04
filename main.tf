@@ -36,7 +36,6 @@ module "sentinel_rules" {
   for_each = {
     for idx, rule in flatten([
       local.rules_vm_activity,
-      local.rules_security,
     ]) : "${rule.name}-${idx}" => rule
   }
 
