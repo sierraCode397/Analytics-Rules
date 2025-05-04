@@ -1,6 +1,6 @@
 terraform {
   backend "azurerm" {
-    resource_group_name  = "Free-tier"
+    resource_group_name  = "Free-tier2"
     storage_account_name = "isaacazuretest"
     container_name       = "tfstate"
     key                  = "terraform.tfstate"
