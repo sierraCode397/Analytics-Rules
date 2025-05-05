@@ -25,10 +25,28 @@ By the end of this project, you’ll have a repeatable, auditable framework that
 ## Prerequisites
 
 ### Create SSH Key
-- Create a SSH key named `user1` and save it in this path `~/.ssh/user1`
+- Create a SSH key named `user1`
+  ```bash
+  ssh-keygen -t rsa -b 4096 -f user1
+  ```
+ and save it in this path `~/.ssh/user1`
+
+- Convert the private key to PEM format:
+
+  ```bash
+  openssl rsa -in user1 -outform PEM -out user1.pem
+  ```
+
 - You need to be sure you have:
   - `user1.pub`
   - `user1.pem`
+
+- Start the SSH Agent
+
+  ```bash
+  eval "$(ssh-agent -s)"
+  ```
+
 - Add this key to your ssh:
   ```bash
   ssh-add ~/.ssh/user1.pem
@@ -176,7 +194,6 @@ This repository will:
 
    - Second container: GitLab
 
-
 ## AWS Configuration
 
 1. Get the access key and SecretKey of your newly created IAM User in AWS
@@ -243,12 +260,14 @@ sudo cat /srv/gitlab/config/initial_root_password
 
 ### API Token Creation
 1. Go to project settings
-2. Create a GitLab API token with:
+2. Create a GitLab API token only for this repository (Not a personal token) with:
    - **Developer** role
    - Permissions: 
      - All API access
      - Read and write access
 3. **Important**: Save the token secret for future steps
+
+> **Note**: This lets you work with both public and private repositories and automatically detects any changes made by your coworkers. Just make sure everyone who needs access has been invited to the repo.
 
 ## Jenkins Integration Setup
 
@@ -300,9 +319,13 @@ Remember add this key to your ssh:
 
 Set the remote URL in your local repository:
 
-
 ```bash
-git remote set-url origin ssh://git@Your_IP_OF_gitlab_instance:2424/Your_User_gitlab/your_repository_name.git
+git remote add origin ssh://git@Your_IP_OF_gitlab_instance:2424/Your_User_gitlab/your_repository_name.git
+```
+
+Change your branch to main:
+```bash
+git branch -M main
 ```
 
 And push your Repo:
@@ -329,7 +352,7 @@ You need to create some credentials, In **Manage Jenkins** > **Credentials**:
 - **Password**: "The gitlab api token you created in previous steps"
 - **ID**: "what you want"
 
-2. **Azure Credentials**
+2. **Azure Service Principal**
 
 - SUBSCRIPTION_ID:
 - Client_id:
@@ -364,7 +387,7 @@ In the **Manage Jenkins** menu, under the **System** menu:
 4. Configure job:
 - **GitLab Connection**: Select your connection
 - **Triggers** Select these:
-  - Build when a change is pushed to GitLab Webhook URL: `http://54.161.1.6:8080/project/CICD-jenkins`
+  - Build when a change is pushed to GitLab Webhook URL: `http://Your_IP_OF_jenkins_instance:8080/project/CICD-jenkins`
   - Selected events:
     - Push Events
     - Push Events on branch delete
@@ -392,3 +415,47 @@ Repeat this step to ensure proper setup:
 
 ## Completion
 The CI/CD pipeline is now fully configured. Changes pushed to your source repository will automatically update Microsoft Sentinel analytics rules.
+
+## Deleting Analytics rules 
+
+To remove existing analytics rules from your workload, follow these steps:
+
+Locate and remove the rule entry from the `locals.tf` file. Rules are defined inside a JSON-style list. For example:
+
+```bash
+locals {
+  # Security rules
+
+  # VM activity rules
+  rules_vm_activity = [
+    {
+      name         = "vm-creation-success"
+      display_name = "VM Created Successfully"
+      severity     = "High"
+      query        = <<QUERY
+AzureActivity |
+  where OperationName == "Create or Update Virtual Machine" or OperationName =="Create Deployment" |
+  where ActivityStatus == "Succeeded"
+QUERY
+    },
+  ]
+}
+```
+
+Delete the specific rule block you no longer need
+
+Also, remove the corresponding rule from the main.tf file, specifically in the module `sentinel_rules` block:
+
+```bash
+  for_each = {
+    for idx, rule in flatten([
+      local.rules_vm_activity,
+    ]) : "${rule.name}-${idx}" => rule
+  }
+```
+
+Make sure the rule you removed in `locals.tf` is not referenced here.
+
+To add new rules, follow the same structure and update the same files as shown in the deletion steps above. 
+
+> **Note**: When creating an analytics rule, avoid reusing a name you've used before—even if you delete the rule, it can take some time for that name to become available again.
